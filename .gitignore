@@ -1,0 +1,7 @@
+/geo_params.csv
+/sku_final.csv
+/test_data.csv
+/train_final.csv
+/venv/
+.idea/
+**/__pycache__/
