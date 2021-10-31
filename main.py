@@ -1,7 +1,9 @@
 from datetime import timedelta, datetime
+from pathlib import Path
 
 from fastai.collab import tabular_learner
 from fastai.data.transforms import Normalize, RandomSplitter
+from fastai.learner import load_learner
 from fastai.metrics import accuracy, rmse
 from fastai.tabular.core import Categorify, FillMissing, TabularPandas
 from fastai.tabular.data import TabularDataLoaders
@@ -74,7 +76,7 @@ def group_by_weeks():
 
 def clean_columns(data_frame):
     data_frame = data_frame.drop(columns=['ID'])
-    # data_frame = data_frame.drop(columns=['geoCluster'])
+    data_frame = data_frame.drop(columns=['geoCluster'])
     return data_frame
 
 
@@ -101,12 +103,12 @@ def set_mean_instead_of_null(data_frame: DataFrame):
 
 
 def test_learn():
-    # frame_skus_group_train = filter_by_sku_type_id(train.pd, WATER_ID)
-    frame_skus_group_train = filter_by_city_id(train.pd, CITY_ID)
+    frame_skus_group_train = filter_by_cluster_id(train.pd, GEO_CLUSTER)
+    frame_skus_group_train = filter_by_sku_type_id(frame_skus_group_train, TROPIC_ID)
     frame_skus_group_train = set_mean_instead_of_null(frame_skus_group_train)
 
-    # frame_skus_group_test = filter_by_sku_type_id(test.pd, WATER_ID)
-    frame_skus_group_test = filter_by_city_id(test.pd, CITY_ID)
+    frame_skus_group_test = filter_by_cluster_id(test.pd, GEO_CLUSTER)
+    frame_skus_group_test = filter_by_sku_type_id(frame_skus_group_test, TROPIC_ID)
 
     learn_frame: DataFrame = frame_skus_group_train
     learn_frame = clean_columns(learn_frame)
@@ -126,7 +128,7 @@ def test_learn():
     to = TabularPandas(learn_frame,
                        y_names='sales',
                        cat_names=[
-                           'geoCluster',
+                           #'geoCluster',
                            'SKU',
                            'year',
                            'month',
@@ -144,16 +146,21 @@ def test_learn():
     learn: TabularLearner = tabular_learner(
         dls,
         layers=[300, 200, 100, 50],
-        model_dir='models',
-        metrics=[rmse, r2_score])
-    learn.lr_find(start_lr=1e-05, end_lr=1e+05, num_it=100)
-    learn.fit_one_cycle(25)
-    learn.save('stage 1')
+       model_dir='models',
+       metrics=[rmse, r2_score]
+        )
+    learn.load(f'stage_local_{GEO_CLUSTER}_product')
+
+    learn.lr_find(
+        start_lr=1e-05, end_lr=1e+05, num_it=100
+    )
+    learn.fit_one_cycle(150)
+    learn.save(f'stage_local_{GEO_CLUSTER}_product')
     # learn.show_results()
 
-    dl = learn.dls.test_dl(test_frame)
-    preds, targs = learn.get_preds(dl=dl)
-    print(preds, targs)
+    # dl = learn.dls.test_dl(test_frame)
+    # preds, targs = learn.get_preds(dl=dl)
+    # print([i for i in preds.tolist()], targs)
 
 
 if __name__ == '__main__':
