@@ -79,10 +79,10 @@ class LearnerCategoryGeo(AbstractLearner):
 
         self._dls.show_batch()
 
-        self._learner = self._make_learner(self._dls)
-        self._learner.lr_find(start_lr=1e-05, end_lr=1e+05, num_it=100 )
-        self._learner.fit_one_cycle(150)
-        return self._learner
+        self._learn = self._make_learner(self._dls)
+        self._learn.lr_find(start_lr=1e-05, end_lr=1e+05, num_it=100 )
+        self._learn.fit_one_cycle(150)
+        return self._learn
 
     def _prepare_data(self):
         self._df = filter_by_sku_type_id(self._df, self.category_id)
